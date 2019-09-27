@@ -96,7 +96,7 @@ public class  Factory {
 		return this;
 	}
 
-	public int getCyborgs() {
+	public int getNumCyborgs() {
 		return cyborgs;
 	}
 

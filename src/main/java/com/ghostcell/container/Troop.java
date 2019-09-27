@@ -17,6 +17,18 @@ public class Troop {
 		return id;
 	}
 
+	public boolean ownerIsMe() {
+		return owner == Owner.YOU;
+	}
+
+	public boolean ownerIsEnemy() {
+		return owner == Owner.ENEMY;
+	}
+
+	public boolean ownerIsNone() {
+		return owner == Owner.NEUTRAL;
+	}
+
 	public Troop setId(int id) {
 		this.id = id;
 		return this;

@@ -25,7 +25,7 @@ public class PrioritizationStrategy extends Strategy {
             initialBombing();
         }
 
-        for(Factory activeFactory : ownFactories) {
+        for(Factory activeFactory : myFactories) {
 
             for(Factory targetFactory : getPrioList(activeFactory)) {
                 evaluateAction(activeFactory, targetFactory);
@@ -40,17 +40,13 @@ public class PrioritizationStrategy extends Strategy {
         if(activeFactory.getId() == targetFactory.getId())
             return;
 
-        int availableCyborgs = activeFactory.getCyborgs();
-
-        availableCyborgs += getSumOfArrivingTroops(activeFactory);
-
+        int availableCyborgs = activeFactory.getNumCyborgs() + getSumOfArrivingTroops(activeFactory);
         if(availableCyborgs <= 1)
             return;
 
         if(targetFactory.ownerIsMe()) {
 
-            int sumArriving = getSumOfArrivingTroops(targetFactory);
-            int balance = sumArriving + targetFactory.getCyborgs();
+            int balance = targetFactory.getNumCyborgs() + getSumOfArrivingTroops(targetFactory);
             if(balance < 0) {
                 int toSend = Math.min(balance, availableCyborgs);
                 sendOrder(new Order(activeFactory, targetFactory, toSend));
@@ -69,11 +65,9 @@ public class PrioritizationStrategy extends Strategy {
         }
     }
 
-
-
     private void initialBombing() {
         Factory enemyStartingFactory = enemyFactories.get(0);
-        Factory ownStartingFactory = ownFactories.get(0);
+        Factory ownStartingFactory = myFactories.get(0);
 
         int bombsRemaining = 2;
 
@@ -102,7 +96,7 @@ public class PrioritizationStrategy extends Strategy {
         if(!order.isBomb() && order.getNum() < 1)
             return;
 
-        order.getFrom().setCyborgs(order.getFrom().getCyborgs() - order.getNum());
+        order.getFrom().setCyborgs(order.getFrom().getNumCyborgs() - order.getNum());
 
         Troop t = new Troop()
                 .setId(-1)
@@ -120,47 +114,40 @@ public class PrioritizationStrategy extends Strategy {
 
     private int getNumberOfCyborgsToSendToTakeFactory(Factory fromFactory, Factory toFactory) {
 
-        int distance = fromFactory.distanceTo(toFactory);
-
         int sumFromArriving = getSumOfArrivingTroops(toFactory);
 
         if(toFactory.ownerIsNone()) {
-            return toFactory.getCyborgs() + sumFromArriving + 1;
-        } else if(toFactory.ownerIsEnemy()) {
-            return toFactory.getCyborgs() + toFactory.getProduction() * distance + sumFromArriving + 1;
-        }
 
-        System.err.println("FAIL " + fromFactory + ", " + toFactory);
-        System.exit(0);
-        return -1;
+            return toFactory.getNumCyborgs() + sumFromArriving + 1;
+
+        } else if(toFactory.ownerIsEnemy()) {
+
+            int distance = fromFactory.distanceTo(toFactory);
+            return toFactory.getNumCyborgs() + toFactory.getProduction() * distance + sumFromArriving + 1;
+
+        } else {
+            System.err.println("Tried to calculate number of cyborgs needed to overtake your own factory");
+            System.exit(-1);
+            return -1;
+        }
     }
 
 
     private int getSumOfArrivingTroops(Factory factory) {
-        return getSumOfArrivingTroops(factory, false);
-    }
 
-    private int getSumOfArrivingTroops(Factory factory, boolean debug) {
-
-        List<Troop> troopsHeadingToPlanet = gameState.getTroops().stream().filter(to -> to.getTargetFactory() == factory.getId()).collect(Collectors.toList());
         List<Troop> ownTroopsHeadingOut = gameState.getOutGoingTroops().stream().filter(to -> to.getTargetFactory() == factory.getId()).collect(Collectors.toList());
+        List<Troop> troopsHeadingToPlanet = gameState.getTroops().stream().filter(to -> to.getTargetFactory() == factory.getId()).collect(Collectors.toList());
         troopsHeadingToPlanet.addAll(ownTroopsHeadingOut);
 
         int balance = 0;
-        int sumFromEnemy = 0;
-        int sumFromYou = 0;
         for(Troop t : troopsHeadingToPlanet) {
-            if(t.getOwner() == Owner.YOU) {
+            if(t.ownerIsMe()) {
                 balance += t.getNumCyborgs();
-                sumFromYou += t.getNumCyborgs();
+
             } else {
                 balance -= t.getNumCyborgs();
-                sumFromEnemy += t.getNumCyborgs();
             }
         }
-
-        if(debug)
-            System.err.println("sumFromEnemy: " + sumFromEnemy + ", sumFromMe: " + sumFromYou + " totalTroops: " + gameState.getTroops().size() + " heading towards me: " + troopsHeadingToPlanet.size() + ", balance =" + balance);
 
         return balance;
     }
@@ -169,6 +156,7 @@ public class PrioritizationStrategy extends Strategy {
     private List<Factory> getPrioList(Factory activeFactory) {
 
         for(Factory f : gameState.getFactories()) {
+
             if(f.getId() == activeFactory.getId())
                 continue;
 
@@ -180,16 +168,16 @@ public class PrioritizationStrategy extends Strategy {
             double productionImportance = 0.2; // 0 - 1
 
 
-            double distanceWeight = normalize(0, 20, distance, true) * distanceImportance;
-            double productionWeight = normalize(0, 3, production, false) * productionImportance;
+            double distanceWeight = normalize( 20, distance, true) * distanceImportance;
+            double productionWeight = normalize( 3, production, false) * productionImportance;
 
-//            System.err.println(f.getId() + " - d: " + distanceWeight + " (" + distance + "), "
-//                    + ", p: " + productionWeight + " (" + production + ")");
+//          System.err.println(f.getId() + " - d: " + distanceWeight + " (" + distance + "), " + ", p: " + productionWeight + " (" + production + ")");
 
-            double prio = normalize(0, 2, distanceWeight + productionWeight, false);
+            double prio = normalize(2, distanceWeight + productionWeight, false);
 
-            if(production == 0)
+            if(production == 0) {
                 prio = 0.001;
+            }
 
             f.setPrioWeight(prio);
         }
@@ -203,12 +191,11 @@ public class PrioritizationStrategy extends Strategy {
         List<Factory> prioFactories = new ArrayList<>(gameState.getFactories());
         prioFactories.sort(compareByPrio);
 
-
         return prioFactories;
     }
 
-    private double normalize(double valueMin, double valueMax, double value, boolean reverse) {
-        double norm =   Math.max(value, 0.00001) / valueMax;
+    private double normalize(double valueMax, double value, boolean reverse) {
+        double norm = Math.max(value, 0.00001) / valueMax;
         return reverse ? 1-norm : norm;
     }
 

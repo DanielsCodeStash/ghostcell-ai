@@ -9,7 +9,7 @@ import java.util.List;
 
 public abstract class Strategy {
 
-	List<Factory> ownFactories;
+	List<Factory> myFactories;
 	List<Factory> enemyFactories;
 	List<Factory> neutralFactories;
 
@@ -26,7 +26,7 @@ public abstract class Strategy {
 	public void initRound() {
 
 
-		ownFactories = gameState.getFactoryListByOwner(Owner.YOU);
+		myFactories = gameState.getFactoryListByOwner(Owner.YOU);
 		enemyFactories = gameState.getFactoryListByOwner(Owner.ENEMY);
 		neutralFactories = gameState.getFactoryListByOwner(Owner.NEUTRAL);
 
