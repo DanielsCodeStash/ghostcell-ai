@@ -1,4 +1,4 @@
-package com.test;
+package com.ghostcell.container;
 
 public class Bomb {
 

@@ -1,11 +1,7 @@
-package com.test;
+package com.ghostcell;
 
 import java.util.*;
 
-/**
- * Auto-generated code below aims at helping you parse
- * the standard input according to the problem statement.
- **/
 class Player {
 
 	public static void main(String args[]) {
@@ -13,7 +9,7 @@ class Player {
 		Scanner in = new Scanner(System.in);
 
 		GameData gameData = new GameData();
-		Ai ai = new Aa_3();
+		Ai ai = new PrioritizationStrategy();
 
 		gameData.parseLinkData(in, gameData);
 
@@ -23,10 +19,7 @@ class Player {
 
 			gameData.turnStart(in);
 
-			//gameData.printState();
-
 			ai.run(gameData);
-
 
 			gameData.endTurn();
 		}

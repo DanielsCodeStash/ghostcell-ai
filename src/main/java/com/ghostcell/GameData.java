@@ -1,4 +1,6 @@
-package com.test;
+package com.ghostcell;
+
+import com.ghostcell.container.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -148,45 +150,9 @@ public class GameData {
 
         }
 
-        calculateFuture();
     }
-
-    private void calculateFuture() {
-        for (Troop t : troops) {
-            Factory targetFactory = getFactoryFromId(t.getTargetFactory());
-            Owner targetOwner = targetFactory.getOwner();
-            Owner troopOwner = t.getOwner();
-            int numTroops = t.getNumCyborgs();
-            int numTroopsAtTarget = targetFactory.getFutureCyborgs();
-
-
-            if ((targetOwner == Owner.YOU && troopOwner == Owner.YOU) || (targetOwner == Owner.ENEMY && troopOwner == Owner.ENEMY)) {
-                targetFactory.addToFutureCyborgs(numTroops);
-            } else {
-
-                if (numTroopsAtTarget < numTroops) {
-                    targetFactory.setFutureOwner(troopOwner);
-                    targetFactory.setFutureCyborgs(numTroops - numTroopsAtTarget);
-                } else {
-                    targetFactory.setFutureCyborgs(numTroopsAtTarget - numTroops);
-                }
-            }
-        }
-    }
-
-
-    private Factory getFactoryFromId(int id) {
-        for (Factory f : factories) {
-            if (f.getId() == id) {
-                return f;
-            }
-        }
-        return null;
-    }
-
 
     public void endTurn() {
-
 
         if (!orders.isEmpty()) {
             String out = "";

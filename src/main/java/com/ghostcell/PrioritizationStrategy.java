@@ -1,11 +1,16 @@
-package com.test;
+package com.ghostcell;
+
+import com.ghostcell.container.Factory;
+import com.ghostcell.container.Order;
+import com.ghostcell.container.Owner;
+import com.ghostcell.container.Troop;
 
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class Aa_3 extends Ai {
+public class PrioritizationStrategy extends Ai {
 
     private boolean firstRound = true;
 
