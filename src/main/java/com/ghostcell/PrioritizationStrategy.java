@@ -10,79 +10,74 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class PrioritizationStrategy extends Ai {
+public class PrioritizationStrategy extends Strategy {
 
-    private boolean firstRound = true;
+
+    public PrioritizationStrategy(GameState gameState) {
+        super(gameState);
+    }
 
     @Override
-    public void run(GameData gameData) {
-        init(gameData);
+    public List<Order> run(GameState gameData) {
+        initRound();
 
-        if(firstRound) {
-            initialBombing(gameData);
-            firstRound = false;
+        if(gameData.getTurnNumber() == 0) {
+            initialBombing();
         }
 
         for(Factory activeFactory : ownFactories) {
 
-            System.err.println("Active factory: " + activeFactory.getId());
-            List<Factory> prioList = getPrioList(gameData, activeFactory);
-            //prioList.forEach(System.err::println);
-
-
-            for(Factory targetFactory : prioList) {
-
-                if(activeFactory.getId() == targetFactory.getId())
-                    continue;
-
-                int availableCyborgs = activeFactory.getCyborgs();
-
-                availableCyborgs += getSumOfArrivingTroops(gameData, activeFactory);
-
-
-                if(availableCyborgs <= 1)
-                    continue;
-
-                if(targetFactory.getOwner() == Owner.YOU) {
-
-                    int sumArriving = getSumOfArrivingTroops(gameData, targetFactory);
-                    int balance = sumArriving + targetFactory.getCyborgs();
-                    if(balance < 0) {
-                        int toSend = Math.min(balance, availableCyborgs);
-                        sendOrder(new Order(activeFactory, targetFactory, toSend), gameData);
-                    }
-
-
-                } else {
-                    int required = getNumberOfCyborgsToSendToTakeFactory(activeFactory, targetFactory, gameData);
-                    if(required < 0)
-                        continue;
-
-                    if(required > availableCyborgs && targetFactory.getOwner() == Owner.NEUTRAL)
-                        continue;
-
-                    sendOrder(new Order(activeFactory, targetFactory, Math.min(availableCyborgs, required)), gameData);
-                }
-
+            for(Factory targetFactory : getPrioList(activeFactory)) {
+                evaluateAction(activeFactory, targetFactory);
             }
         }
 
-        System.err.println("done");
+        return orders;
+    }
 
+    private void evaluateAction(Factory activeFactory, Factory targetFactory) {
+
+        if(activeFactory.getId() == targetFactory.getId())
+            return;
+
+        int availableCyborgs = activeFactory.getCyborgs();
+
+        availableCyborgs += getSumOfArrivingTroops(activeFactory);
+
+        if(availableCyborgs <= 1)
+            return;
+
+        if(targetFactory.ownerIsMe()) {
+
+            int sumArriving = getSumOfArrivingTroops(targetFactory);
+            int balance = sumArriving + targetFactory.getCyborgs();
+            if(balance < 0) {
+                int toSend = Math.min(balance, availableCyborgs);
+                sendOrder(new Order(activeFactory, targetFactory, toSend));
+            }
+
+        } else {
+
+            int required = getNumberOfCyborgsToSendToTakeFactory(activeFactory, targetFactory);
+            if(required < 0)
+                return;
+
+            if(required > availableCyborgs && targetFactory.ownerIsNone())
+                return;
+
+            sendOrder(new Order(activeFactory, targetFactory, Math.min(availableCyborgs, required)));
+        }
     }
 
 
 
-
-    public void initialBombing(GameData gameData) {
+    private void initialBombing() {
         Factory enemyStartingFactory = enemyFactories.get(0);
         Factory ownStartingFactory = ownFactories.get(0);
 
         int bombsRemaining = 2;
 
-
-
-        List<Factory> enemyPrioList = getPrioList(gameData, enemyStartingFactory);
+        List<Factory> enemyPrioList = getPrioList(enemyStartingFactory);
 
         for(Factory f : enemyPrioList) {
             if(bombsRemaining == 0)
@@ -96,13 +91,13 @@ public class PrioritizationStrategy extends Ai {
                     .setTo(f)
                     .setBomb(true);
 
-            gameData.addOrder(bomb);
+            orders.add(bomb);
 
             bombsRemaining--;
         }
     }
 
-    private void sendOrder(Order order, GameData gameData) {
+    private void sendOrder(Order order) {
 
         if(!order.isBomb() && order.getNum() < 1)
             return;
@@ -115,22 +110,23 @@ public class PrioritizationStrategy extends Ai {
                 .setLeavingFactory(order.getFrom().getId())
                 .setTargetFactory(order.getTo().getId())
                 .setNumCyborgs(order.getNum())
-                .setTurnsUntilArrival(gameData.distanceBetweenFactories(order.getFrom(), order.getTo(), gameData));
+                .setTurnsUntilArrival(order.getFrom().distanceTo(order.getTo()));
 
-        gameData.addOutgoingTroop(t);
 
-        gameData.addOrder(order);
+        gameState.addOutgoingTroop(t);
+
+        orders.add(order);
     }
 
-    private int getNumberOfCyborgsToSendToTakeFactory(Factory fromFactory, Factory toFactory, GameData gameData) {
+    private int getNumberOfCyborgsToSendToTakeFactory(Factory fromFactory, Factory toFactory) {
 
-        int distance = gameData.distanceBetweenFactories(fromFactory, toFactory, gameData);
+        int distance = fromFactory.distanceTo(toFactory);
 
-        int sumFromArriving = getSumOfArrivingTroops(gameData, toFactory);
+        int sumFromArriving = getSumOfArrivingTroops(toFactory);
 
-        if(toFactory.getOwner() == Owner.NEUTRAL) {
+        if(toFactory.ownerIsNone()) {
             return toFactory.getCyborgs() + sumFromArriving + 1;
-        } else if(toFactory.getOwner() == Owner.ENEMY) {
+        } else if(toFactory.ownerIsEnemy()) {
             return toFactory.getCyborgs() + toFactory.getProduction() * distance + sumFromArriving + 1;
         }
 
@@ -140,15 +136,14 @@ public class PrioritizationStrategy extends Ai {
     }
 
 
-    private int getSumOfArrivingTroops(GameData gameData, Factory factory) {
-        return getSumOfArrivingTroops(gameData, factory, false);
+    private int getSumOfArrivingTroops(Factory factory) {
+        return getSumOfArrivingTroops(factory, false);
     }
 
-    private int getSumOfArrivingTroops(GameData gameData, Factory factory, boolean debug) {
+    private int getSumOfArrivingTroops(Factory factory, boolean debug) {
 
-
-        List<Troop> troopsHeadingToPlanet = gameData.getTroops().stream().filter(to -> to.getTargetFactory() == factory.getId()).collect(Collectors.toList());
-        List<Troop> ownTroopsHeadingOut = gameData.getOutGoingTroops().stream().filter(to -> to.getTargetFactory() == factory.getId()).collect(Collectors.toList());
+        List<Troop> troopsHeadingToPlanet = gameState.getTroops().stream().filter(to -> to.getTargetFactory() == factory.getId()).collect(Collectors.toList());
+        List<Troop> ownTroopsHeadingOut = gameState.getOutGoingTroops().stream().filter(to -> to.getTargetFactory() == factory.getId()).collect(Collectors.toList());
         troopsHeadingToPlanet.addAll(ownTroopsHeadingOut);
 
         int balance = 0;
@@ -165,19 +160,19 @@ public class PrioritizationStrategy extends Ai {
         }
 
         if(debug)
-            System.err.println("sumFromEnemy: " + sumFromEnemy + ", sumFromMe: " + sumFromYou + " totalTroops: " + gameData.getTroops().size() + " heading towards me: " + troopsHeadingToPlanet.size() + ", balance =" + balance);
+            System.err.println("sumFromEnemy: " + sumFromEnemy + ", sumFromMe: " + sumFromYou + " totalTroops: " + gameState.getTroops().size() + " heading towards me: " + troopsHeadingToPlanet.size() + ", balance =" + balance);
 
         return balance;
     }
 
 
-    private List<Factory> getPrioList(GameData gameData, Factory activeFactory) {
+    private List<Factory> getPrioList(Factory activeFactory) {
 
-        for(Factory f : gameData.getFactories()) {
+        for(Factory f : gameState.getFactories()) {
             if(f.getId() == activeFactory.getId())
                 continue;
 
-            double distance = gameData.distanceBetweenFactories(activeFactory, f, gameData);
+            double distance = activeFactory.distanceTo(f);
 
             int production = f.getProduction();
 
@@ -205,7 +200,7 @@ public class PrioritizationStrategy extends Ai {
             return fp2.compareTo(fp1);
         };
 
-        List<Factory> prioFactories = new ArrayList<>(gameData.getFactories());
+        List<Factory> prioFactories = new ArrayList<>(gameState.getFactories());
         prioFactories.sort(compareByPrio);
 
 

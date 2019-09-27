@@ -1,27 +1,34 @@
 package com.ghostcell;
 
+import com.ghostcell.container.Order;
+import com.ghostcell.io.InputHandler;
+import com.ghostcell.io.OutputHandler;
+
 import java.util.*;
 
+@SuppressWarnings("InfiniteLoopStatement")
 class Player {
 
-	public static void main(String args[]) {
+	public static void main(String[] args) {
 
 		Scanner in = new Scanner(System.in);
 
-		GameData gameData = new GameData();
-		Ai ai = new PrioritizationStrategy();
+		GameState gameState = GameState.init();
 
-		gameData.parseLinkData(in, gameData);
+		Strategy strategy = new PrioritizationStrategy(gameState);
+
+		InputHandler.readInitInput(gameState, in);
 
 
-		// game loop
 		while (true) {
 
-			gameData.turnStart(in);
+			InputHandler.readTurnInput(gameState, in);
 
-			ai.run(gameData);
+			List<Order> orders = strategy.run(gameState);
 
-			gameData.endTurn();
+			OutputHandler.executeOrders(orders);
+
+			gameState.turnDone();
 		}
 	}
 }

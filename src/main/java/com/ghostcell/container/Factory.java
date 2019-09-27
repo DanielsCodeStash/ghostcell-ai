@@ -1,5 +1,7 @@
 package com.ghostcell.container;
 
+import com.ghostcell.GameState;
+
 public class  Factory {
 
 	private int id;
@@ -13,11 +15,39 @@ public class  Factory {
 
 	private int production;
 
+	private int turnsUntilProduction;
+
 	public Factory() {
+	}
+
+	public int distanceTo(Factory otherFactory) {
+		return  GameState.getInstance().distanceBetweenFactories(this, otherFactory);
+	}
+
+	public boolean ownerIsMe() {
+		return owner == Owner.YOU;
+	}
+
+	public boolean ownerIsEnemy() {
+		return owner == Owner.ENEMY;
+	}
+
+	public boolean ownerIsNone() {
+		return owner == Owner.NEUTRAL;
 	}
 
 	public double getPrioWeight() {
 		return prioWeight;
+	}
+
+	public int getTurnsUntilProduction() {
+		return turnsUntilProduction;
+	}
+
+
+	public Factory setTurnsUntilProduction(int turnsUntilProduction) {
+		this.turnsUntilProduction = turnsUntilProduction;
+		return this;
 	}
 
 	public Factory setPrioWeight(double prioWeight) {
