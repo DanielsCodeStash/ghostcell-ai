@@ -1,5 +1,7 @@
 package com.ghostcell.container;
 
+import com.ghostcell.GameState;
+
 public class Troop {
 
 	private int id;
@@ -39,8 +41,8 @@ public class Troop {
 		return this;
 	}
 
-	public int getLeavingFactory() {
-		return leavingFactory;
+	public Factory getLeavingFactory() {
+		return GameState.getInstance().getFactoryById(leavingFactory);
 	}
 
 	public Troop setLeavingFactory(int leavingFactory) {
@@ -48,8 +50,8 @@ public class Troop {
 		return this;
 	}
 
-	public int getTargetFactory() {
-		return targetFactory;
+	public Factory getTargetFactory() {
+		return GameState.getInstance().getFactoryById(targetFactory);
 	}
 
 	public Troop setTargetFactory(int targetFactory) {

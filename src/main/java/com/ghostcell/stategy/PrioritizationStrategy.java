@@ -1,5 +1,7 @@
-package com.ghostcell;
+package com.ghostcell.stategy;
 
+import com.ghostcell.GameState;
+import com.ghostcell.Strategy;
 import com.ghostcell.container.Factory;
 import com.ghostcell.container.Order;
 import com.ghostcell.container.Owner;
@@ -9,12 +11,15 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class PrioritizationStrategy extends Strategy {
 
+    private PrioritizationModel prioModel;
 
     public PrioritizationStrategy(GameState gameState) {
         super(gameState);
+        prioModel = new PrioritizationModel(gameState);
     }
 
     @Override
@@ -27,7 +32,7 @@ public class PrioritizationStrategy extends Strategy {
 
         for(Factory activeFactory : myFactories) {
 
-            for(Factory targetFactory : getPrioList(activeFactory)) {
+            for(Factory targetFactory : prioModel.getPrioList(activeFactory)) {
                 evaluateAction(activeFactory, targetFactory);
             }
         }
@@ -71,7 +76,7 @@ public class PrioritizationStrategy extends Strategy {
 
         int bombsRemaining = 2;
 
-        List<Factory> enemyPrioList = getPrioList(enemyStartingFactory);
+        List<Factory> enemyPrioList = prioModel.getPrioList(enemyStartingFactory);
 
         for(Factory f : enemyPrioList) {
             if(bombsRemaining == 0)
@@ -133,11 +138,12 @@ public class PrioritizationStrategy extends Strategy {
     }
 
 
-    private int getSumOfArrivingTroops(Factory factory) {
+    private int getSumOfArrivingTroops(Factory activeFactory) {
 
-        List<Troop> ownTroopsHeadingOut = gameState.getOutGoingTroops().stream().filter(to -> to.getTargetFactory() == factory.getId()).collect(Collectors.toList());
-        List<Troop> troopsHeadingToPlanet = gameState.getTroops().stream().filter(to -> to.getTargetFactory() == factory.getId()).collect(Collectors.toList());
-        troopsHeadingToPlanet.addAll(ownTroopsHeadingOut);
+        List<Troop> troopsHeadingToPlanet = Stream.of(gameState.getOutGoingTroops().stream(), gameState.getTroops().stream())
+                .flatMap(t -> t)
+                .filter(troop -> troop.getTargetFactory().equals(activeFactory))
+                .collect(Collectors.toList());
 
         int balance = 0;
         for(Troop t : troopsHeadingToPlanet) {
@@ -150,53 +156,6 @@ public class PrioritizationStrategy extends Strategy {
         }
 
         return balance;
-    }
-
-
-    private List<Factory> getPrioList(Factory activeFactory) {
-
-        for(Factory f : gameState.getFactories()) {
-
-            if(f.getId() == activeFactory.getId())
-                continue;
-
-            double distance = activeFactory.distanceTo(f);
-
-            int production = f.getProduction();
-
-            double distanceImportance = 0.9; // 0 - 1
-            double productionImportance = 0.2; // 0 - 1
-
-
-            double distanceWeight = normalize( 20, distance, true) * distanceImportance;
-            double productionWeight = normalize( 3, production, false) * productionImportance;
-
-//          System.err.println(f.getId() + " - d: " + distanceWeight + " (" + distance + "), " + ", p: " + productionWeight + " (" + production + ")");
-
-            double prio = normalize(2, distanceWeight + productionWeight, false);
-
-            if(production == 0) {
-                prio = 0.001;
-            }
-
-            f.setPrioWeight(prio);
-        }
-
-        Comparator<Factory> compareByPrio = (f, f2) -> {
-            Double fp1 = f.getPrioWeight();
-            Double fp2 = f2.getPrioWeight();
-            return fp2.compareTo(fp1);
-        };
-
-        List<Factory> prioFactories = new ArrayList<>(gameState.getFactories());
-        prioFactories.sort(compareByPrio);
-
-        return prioFactories;
-    }
-
-    private double normalize(double valueMax, double value, boolean reverse) {
-        double norm = Math.max(value, 0.00001) / valueMax;
-        return reverse ? 1-norm : norm;
     }
 
 }

@@ -9,14 +9,14 @@ import java.util.List;
 
 public abstract class Strategy {
 
-	List<Factory> myFactories;
-	List<Factory> enemyFactories;
-	List<Factory> neutralFactories;
+	protected List<Factory> myFactories;
+    protected List<Factory> enemyFactories;
+    protected List<Factory> neutralFactories;
 
 
-	List<Order> orders;
+    protected List<Order> orders;
 
-	GameState gameState;
+    protected GameState gameState;
 
 	public Strategy(GameState gameState) {
 		this.gameState = gameState;
