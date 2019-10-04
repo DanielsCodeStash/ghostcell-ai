@@ -2,13 +2,8 @@ package com.ghostcell.stategy;
 
 import com.ghostcell.GameState;
 import com.ghostcell.Strategy;
-import com.ghostcell.container.Factory;
-import com.ghostcell.container.Order;
-import com.ghostcell.container.Owner;
-import com.ghostcell.container.Troop;
+import com.ghostcell.container.*;
 
-import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -35,8 +30,8 @@ public class PrioritizationStrategy extends Strategy {
                 evaluateAction(activeFactory, targetFactory);
             }
 
-            for(Factory targetFactory : bombPrioModel.getPrioList(activeFactory)) {
-                evaluateBombAction(activeFactory, targetFactory);
+            for(FactoryPrio prio : bombPrioModel.getPrioList(activeFactory)) {
+                evaluateBombAction(activeFactory, prio.getTargetFactory());
             }
         }
 
@@ -87,32 +82,6 @@ public class PrioritizationStrategy extends Strategy {
                 return;
 
             sendOrder(new Order(activeFactory, targetFactory, Math.min(availableCyborgs, required)));
-        }
-    }
-
-    private void initialBombing() {
-        Factory enemyStartingFactory = enemyFactories.get(0);
-        Factory ownStartingFactory = myFactories.get(0);
-
-        int bombsRemaining = 2;
-
-        List<Factory> enemyPrioList = prioModel.getPrioList(enemyStartingFactory);
-
-        for(Factory f : enemyPrioList) {
-            if(bombsRemaining == 0)
-                return;
-
-            if(f.getOwner() == Owner.YOU)
-                continue;
-
-            Order bomb = new Order()
-                    .setFrom(ownStartingFactory)
-                    .setTo(f)
-                    .setBomb(true);
-
-            orders.add(bomb);
-
-            bombsRemaining--;
         }
     }
 

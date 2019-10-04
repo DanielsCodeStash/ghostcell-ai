@@ -2,8 +2,10 @@ package com.ghostcell.stategy;
 
 import com.ghostcell.GameState;
 import com.ghostcell.container.Factory;
+import com.ghostcell.container.FactoryPrio;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
@@ -17,10 +19,13 @@ public class BombPrioritizationModel {
         this.gameState = gameState;
     }
 
-    public List<Factory> getPrioList(Factory originFactory) {
+    public List<FactoryPrio> getPrioList(Factory originFactory) {
 
+        List<FactoryPrio> factoryPrios = new ArrayList<>();
 
         for(Factory target : gameState.getFactories()) {
+
+            FactoryPrio factoryPrio = new FactoryPrio(originFactory, target);
 
             if(target.getId() == originFactory.getId())
                 continue;
@@ -30,16 +35,13 @@ public class BombPrioritizationModel {
                 continue;
             }
 
-            double distance = originFactory.distanceTo(target);
-
-
             double distanceImportance = 0.2;
             double productionImportance = 0.9;
             double ownProductionImportance = 0.5;
             double enemyCyborgsImportance = 0.5;
 
             // higher is better, so 0 worst and 1 best
-            double distanceWeight = normalize( 20, distance, true) * distanceImportance;
+            double distanceWeight = normalize( 20, originFactory.distanceTo(target), true) * distanceImportance;
             double productionWeight = normalize( 3, target.getProduction(), false) * productionImportance;
             double ownProductionWeight = normalize(3, originFactory.getProduction(), true) * ownProductionImportance;
             double enemyCyborgWeight = normalize(100, originFactory.getProduction(), false) * enemyCyborgsImportance;
@@ -63,19 +65,13 @@ public class BombPrioritizationModel {
                 prio = 0.0001;
             }
 
-            target.setBombPrio(prio);
+            factoryPrio.setFactoryPrio(prio);
+            factoryPrios.add(factoryPrio);
         }
 
-        Comparator<Factory> compareByPrio = (f, f2) -> {
-            Double fp1 = f.getBombPrio();
-            Double fp2 = f2.getBombPrio();
-            return fp2.compareTo(fp1);
-        };
+        Collections.sort(factoryPrios);
 
-        List<Factory> prioFactories = new ArrayList<>(gameState.getFactories());
-        prioFactories.sort(compareByPrio);
-
-        return prioFactories;
+        return factoryPrios;
     }
 
 
