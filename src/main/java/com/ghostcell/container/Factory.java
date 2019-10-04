@@ -2,14 +2,11 @@ package com.ghostcell.container;
 
 import com.ghostcell.GameState;
 
-public class  Factory {
+public class Factory {
 
 	private int id;
 	private Owner owner;
 	private int cyborgs;
-
-	private int futureCyborgs; // positive for current, minus for other
-	private Owner futureOwner;
 
 	private double prioWeight;
 
@@ -21,7 +18,7 @@ public class  Factory {
 	}
 
 	public int distanceTo(Factory otherFactory) {
-		return  GameState.getInstance().distanceBetweenFactories(this, otherFactory);
+		return GameState.getInstance().distanceBetweenFactories(this, otherFactory);
 	}
 
 	public boolean ownerIsMe() {
@@ -55,27 +52,6 @@ public class  Factory {
 		return this;
 	}
 
-	public Owner getFutureOwner() {
-		return futureOwner;
-	}
-
-	public Factory setFutureOwner(Owner futureOwner) {
-		this.futureOwner = futureOwner;
-		return this;
-	}
-
-	public int getFutureCyborgs() {
-		return futureCyborgs;
-	}
-
-	public void addToFutureCyborgs(int num) {
-		futureCyborgs += num;
-	}
-
-	public Factory setFutureCyborgs(int futureCyborgs) {
-		this.futureCyborgs = futureCyborgs;
-		return this;
-	}
 
 	public int getId() {
 		return id;
@@ -91,7 +67,6 @@ public class  Factory {
 	}
 
 	public Factory setOwner(Owner owner) {
-		this.futureOwner = owner;
 		this.owner = owner;
 		return this;
 	}
@@ -102,7 +77,6 @@ public class  Factory {
 
 	public Factory setCyborgs(int cyborgs) {
 		this.cyborgs = cyborgs;
-		this.setFutureCyborgs(cyborgs);
 		return this;
 	}
 
@@ -121,8 +95,6 @@ public class  Factory {
 				"id=" + id +
 				", owner=" + owner +
 				", cyborgs=" + cyborgs +
-				", futureCyborgs=" + futureCyborgs +
-				", futureOwner=" + futureOwner +
 				", prioWeight=" + prioWeight +
 				", production=" + production +
 				'}';
