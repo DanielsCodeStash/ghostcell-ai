@@ -1,0 +1,4 @@
+Bomb
+- initially use bombs to clear neutrals?
+- follow bombs with troops
+-

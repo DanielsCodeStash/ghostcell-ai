@@ -8,7 +8,8 @@ public class Factory {
 	private Owner owner;
 	private int cyborgs;
 
-	private double prioWeight;
+	private double factoryPrio;
+	private double bombPrio;
 
 	private int production;
 
@@ -33,9 +34,6 @@ public class Factory {
 		return owner == Owner.NEUTRAL;
 	}
 
-	public double getPrioWeight() {
-		return prioWeight;
-	}
 
 	public int getTurnsUntilProduction() {
 		return turnsUntilProduction;
@@ -47,11 +45,23 @@ public class Factory {
 		return this;
 	}
 
-	public Factory setPrioWeight(double prioWeight) {
-		this.prioWeight = prioWeight;
+	public double getFactoryPrio() {
+		return factoryPrio;
+	}
+
+	public Factory setFactoryPrio(double factoryPrio) {
+		this.factoryPrio = factoryPrio;
 		return this;
 	}
 
+	public double getBombPrio() {
+		return bombPrio;
+	}
+
+	public Factory setBombPrio(double bombPrio) {
+		this.bombPrio = bombPrio;
+		return this;
+	}
 
 	public int getId() {
 		return id;
@@ -95,8 +105,10 @@ public class Factory {
 				"id=" + id +
 				", owner=" + owner +
 				", cyborgs=" + cyborgs +
-				", prioWeight=" + prioWeight +
+				", factoryPrio=" + factoryPrio +
+				", bombPrio=" + bombPrio +
 				", production=" + production +
+				", turnsUntilProduction=" + turnsUntilProduction +
 				'}';
 	}
 }

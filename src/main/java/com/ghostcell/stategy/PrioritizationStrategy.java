@@ -17,27 +17,47 @@ public class PrioritizationStrategy extends Strategy {
 
     private PrioritizationModel prioModel;
 
+    private BombPrioritizationModel bombPrioModel;
+
     public PrioritizationStrategy(GameState gameState) {
         super(gameState);
         prioModel = new PrioritizationModel(gameState);
+        bombPrioModel = new BombPrioritizationModel(gameState);
     }
 
     @Override
     public List<Order> run(GameState gameData) {
         initRound();
 
-        if(gameData.getTurnNumber() == 0) {
-            initialBombing();
-        }
-
         for(Factory activeFactory : myFactories) {
 
             for(Factory targetFactory : prioModel.getPrioList(activeFactory)) {
                 evaluateAction(activeFactory, targetFactory);
             }
+
+            for(Factory targetFactory : bombPrioModel.getPrioList(activeFactory)) {
+                evaluateBombAction(activeFactory, targetFactory);
+            }
         }
 
         return orders;
+    }
+
+    private void evaluateBombAction(Factory activeFactory, Factory targetFactory) {
+        if(gameState.getNumBombsRemaining() == 0)
+            return;
+
+        if(activeFactory.ownerIsMe() && targetFactory.ownerIsEnemy()) {
+            if(targetFactory.getBombPrio() > 0.35) {
+                Order bomb = new Order()
+                        .setFrom(activeFactory)
+                        .setTo(targetFactory)
+                        .setBomb(true);
+
+                orders.add(bomb);
+                gameState.removeOneAvailableBomb();
+            }
+        }
     }
 
     private void evaluateAction(Factory activeFactory, Factory targetFactory) {

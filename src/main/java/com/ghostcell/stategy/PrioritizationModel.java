@@ -41,12 +41,12 @@ public class PrioritizationModel {
                 prio = 0.001;
             }
 
-            f.setPrioWeight(prio);
+            f.setFactoryPrio(prio);
         }
 
         Comparator<Factory> compareByPrio = (f, f2) -> {
-            Double fp1 = f.getPrioWeight();
-            Double fp2 = f2.getPrioWeight();
+            Double fp1 = f.getFactoryPrio();
+            Double fp2 = f2.getFactoryPrio();
             return fp2.compareTo(fp1);
         };
 

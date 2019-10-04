@@ -18,10 +18,19 @@ public class GameState {
     private Map<Integer, Factory> idToFactory = new HashMap<>();
     private Map<String, Integer> factoryIdsToDistance = new HashMap<>();
 
+    private int numBombsRemaining = 2;
 
     private static GameState instance;
     public static GameState getInstance() {
         return instance;
+    }
+
+    public int getNumBombsRemaining() {
+        return numBombsRemaining;
+    }
+
+    public void removeOneAvailableBomb() {
+        numBombsRemaining--;
     }
 
     public static GameState init() {
