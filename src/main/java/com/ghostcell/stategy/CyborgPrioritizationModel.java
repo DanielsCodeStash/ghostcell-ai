@@ -2,10 +2,9 @@ package com.ghostcell.stategy;
 
 import com.ghostcell.GameState;
 import com.ghostcell.container.Factory;
-
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
+import com.ghostcell.priomodel.FactoryPrio;
+import com.ghostcell.priomodel.PrioList;
+import com.ghostcell.priomodel.Weight;
 
 public class CyborgPrioritizationModel {
 
@@ -15,45 +14,47 @@ public class CyborgPrioritizationModel {
         this.gameState = gameState;
     }
 
-    public List<Factory> getPrioList(Factory activeFactory) {
+    public PrioList getPrioList(Factory originFactory) {
 
-        for(Factory f : gameState.getFactories()) {
+        PrioList prioList = new PrioList();
 
-            if(f.getId() == activeFactory.getId())
+        for(Factory target : gameState.getFactories()) {
+
+            FactoryPrio factoryPrio = new FactoryPrio(originFactory, target);
+
+            if(target.getId() == originFactory.getId())
                 continue;
 
-            double distance = activeFactory.distanceTo(f);
 
-            int production = f.getProduction();
+            double distanceImportance = 0.9;
+            double productionImportance = 0.2;
 
-            double distanceImportance = 0.9; // 0 - 1
-            double productionImportance = 0.2; // 0 - 1
+            factoryPrio.addWeight(new Weight()
+                    .setLabel("dist")
+                    .setMaxValue(20)
+                    .setValue(originFactory.distanceTo(target))
+                    .setReverse(true)
+                    .setImportance(distanceImportance));
+
+            factoryPrio.addWeight(new Weight() // target production
+                    .setLabel("t_prod")
+                    .setMaxValue(3)
+                    .setValue(target.getProduction())
+                    .setReverse(false)
+                    .setImportance(productionImportance));
 
 
-            double distanceWeight = normalize( 20, distance, true) * distanceImportance;
-            double productionWeight = normalize( 3, production, false) * productionImportance;
+            double prio = factoryPrio.calculatePreliminaryPrio();
 
-//          System.err.println(f.getId() + " - d: " + distanceWeight + " (" + distance + "), " + ", p: " + productionWeight + " (" + production + ")");
-
-            double prio = normalize(2, distanceWeight + productionWeight, false);
-
-            if(production == 0) {
+            if(prio == 0) {
                 prio = 0.001;
             }
 
-            f.setFactoryPrio(prio);
+            factoryPrio.setFactoryPrio(prio);
+            prioList.add(factoryPrio);
         }
 
-        Comparator<Factory> compareByPrio = (f, f2) -> {
-            Double fp1 = f.getFactoryPrio();
-            Double fp2 = f2.getFactoryPrio();
-            return fp2.compareTo(fp1);
-        };
-
-        List<Factory> prioFactories = new ArrayList<>(gameState.getFactories());
-        prioFactories.sort(compareByPrio);
-
-        return prioFactories;
+        return prioList.sort();
     }
 
     private double normalize(double valueMax, double value, boolean reverse) {

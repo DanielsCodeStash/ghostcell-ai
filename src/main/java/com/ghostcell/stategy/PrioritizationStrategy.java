@@ -4,6 +4,7 @@ import com.ghostcell.GameState;
 import com.ghostcell.Strategy;
 import com.ghostcell.container.*;
 import com.ghostcell.priomodel.FactoryPrio;
+import com.ghostcell.priomodel.PrioList;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -11,13 +12,13 @@ import java.util.stream.Stream;
 
 public class PrioritizationStrategy extends Strategy {
 
-    private CyborgPrioritizationModel prioModel;
+    private CyborgPrioritizationModel cyborgPrioModel;
 
     private BombPrioritizationModel bombPrioModel;
 
     public PrioritizationStrategy(GameState gameState) {
         super(gameState);
-        prioModel = new CyborgPrioritizationModel(gameState);
+        cyborgPrioModel = new CyborgPrioritizationModel(gameState);
         bombPrioModel = new BombPrioritizationModel(gameState);
     }
 
@@ -27,26 +28,33 @@ public class PrioritizationStrategy extends Strategy {
 
         for(Factory activeFactory : myFactories) {
 
-            for(Factory targetFactory : prioModel.getPrioList(activeFactory)) {
-                evaluateAction(activeFactory, targetFactory);
+            PrioList cyborgPrio = cyborgPrioModel.getPrioList(activeFactory);
+            for(FactoryPrio prio : cyborgPrio.get()) {
+                evaluateAction(prio);
             }
 
-            for(FactoryPrio prio : bombPrioModel.getPrioList(activeFactory)) {
-                evaluateBombAction(activeFactory, prio.getTargetFactory());
+            PrioList bombPrio = bombPrioModel.getPrioList(activeFactory);
+            bombPrio.print();
+            for(FactoryPrio prio : bombPrio.get()) {
+                evaluateBombAction(prio);
             }
         }
 
         return orders;
     }
 
-    private void evaluateBombAction(Factory activeFactory, Factory targetFactory) {
+
+    private void evaluateBombAction(FactoryPrio prio) {
+        Factory originFactory = prio.getOriginFactory();
+        Factory targetFactory = prio.getTargetFactory();
+
         if(gameState.getNumBombsRemaining() == 0)
             return;
 
-        if(activeFactory.ownerIsMe() && targetFactory.ownerIsEnemy()) {
-            if(targetFactory.getBombPrio() > 0.35) {
+        if(originFactory.ownerIsMe() && targetFactory.ownerIsEnemy()) {
+            if(prio.getFactoryPrio() > 0.35) {
                 Order bomb = new Order()
-                        .setFrom(activeFactory)
+                        .setFrom(originFactory)
                         .setTo(targetFactory)
                         .setBomb(true);
 
@@ -56,12 +64,15 @@ public class PrioritizationStrategy extends Strategy {
         }
     }
 
-    private void evaluateAction(Factory activeFactory, Factory targetFactory) {
+    private void evaluateAction(FactoryPrio prio) {
 
-        if(activeFactory.getId() == targetFactory.getId())
+        Factory originFactory = prio.getOriginFactory();
+        Factory targetFactory = prio.getTargetFactory();
+
+        if(originFactory.getId() == targetFactory.getId())
             return;
 
-        int availableCyborgs = activeFactory.getNumCyborgs() + getSumOfArrivingTroops(activeFactory);
+        int availableCyborgs = originFactory.getNumCyborgs() + getSumOfArrivingTroops(originFactory);
         if(availableCyborgs <= 1)
             return;
 
@@ -70,19 +81,19 @@ public class PrioritizationStrategy extends Strategy {
             int balance = targetFactory.getNumCyborgs() + getSumOfArrivingTroops(targetFactory);
             if(balance < 0) {
                 int toSend = Math.min(balance, availableCyborgs);
-                sendOrder(new Order(activeFactory, targetFactory, toSend));
+                sendOrder(new Order(originFactory, targetFactory, toSend));
             }
 
         } else {
 
-            int required = getNumberOfCyborgsToSendToTakeFactory(activeFactory, targetFactory);
+            int required = getNumberOfCyborgsToSendToTakeFactory(originFactory, targetFactory);
             if(required < 0)
                 return;
 
             if(required > availableCyborgs && targetFactory.ownerIsNone())
                 return;
 
-            sendOrder(new Order(activeFactory, targetFactory, Math.min(availableCyborgs, required)));
+            sendOrder(new Order(originFactory, targetFactory, Math.min(availableCyborgs, required)));
         }
     }
 

@@ -3,7 +3,8 @@ package com.ghostcell.stategy;
 import com.ghostcell.GameState;
 import com.ghostcell.container.Factory;
 import com.ghostcell.priomodel.FactoryPrio;
-import com.ghostcell.priomodel.WeightDebugger;
+import com.ghostcell.priomodel.PrioList;
+import com.ghostcell.priomodel.Weight;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -19,64 +20,66 @@ public class BombPrioritizationModel {
         this.gameState = gameState;
     }
 
-    public List<FactoryPrio> getPrioList(Factory originFactory) {
+    public PrioList getPrioList(Factory originFactory) {
 
-        List<FactoryPrio> factoryPrios = new ArrayList<>();
+        PrioList prioList = new PrioList();
 
         for(Factory target : gameState.getFactories()) {
 
             FactoryPrio factoryPrio = new FactoryPrio(originFactory, target);
 
-            if(target.getId() == originFactory.getId())
-                continue;
-
-            if(!target.ownerIsEnemy()) {
-                target.setBombPrio(0);
+            if(target.getId() == originFactory.getId() || !target.ownerIsEnemy()) {
                 continue;
             }
 
             double distanceImportance = 0.2;
-            double productionImportance = 0.9;
-            double ownProductionImportance = 0.5;
-            double enemyCyborgsImportance = 0.5;
+            double targetProductionImportance = 0.9;
+            double targetCyborgsImportance = 0.5;
 
-            // higher is better, so 0 worst and 1 best
-            double distanceWeight = normalize( 20, originFactory.distanceTo(target), true) * distanceImportance;
-            double productionWeight = normalize( 3, target.getProduction(), false) * productionImportance;
-            double ownProductionWeight = normalize(3, originFactory.getProduction(), true) * ownProductionImportance;
-            double enemyCyborgWeight = normalize(100, originFactory.getProduction(), false) * enemyCyborgsImportance;
+            factoryPrio.addWeight(new Weight()
+                    .setLabel("dist")
+                    .setMaxValue(20)
+                    .setValue(originFactory.distanceTo(target))
+                    .setReverse(true)
+                    .setImportance(distanceImportance));
 
-            double prio = normalize(4, distanceWeight + productionWeight + ownProductionWeight + enemyCyborgWeight, false);
+            factoryPrio.addWeight(new Weight() // target production
+                    .setLabel("t_prod")
+                    .setMaxValue(3)
+                    .setValue(target.getProduction())
+                    .setReverse(false)
+                    .setImportance(targetProductionImportance));
+
+
+
+            factoryPrio.addWeight(new Weight() // target cyborgs
+                    .setLabel("t_cybo")
+                    .setMaxValue(100)
+                    .setValue(target.getNumCyborgs())
+                    .setReverse(true)
+                    .setImportance(targetCyborgsImportance));
+
+
+           double prio = factoryPrio.calculatePreliminaryPrio();
 
             // round number bonus
             prio = Math.min(1, prio + gameState.getTurnNumber() * 0.01);
 
-            WeightDebugger debugger = new WeightDebugger(debug, originFactory, target, prio)
-                    .addWeight("dist", distanceWeight)
-                    .addWeight("production", productionWeight)
-                    .addWeight("ownProduction", ownProductionWeight)
-                    .addWeight("enemyCyborg", enemyCyborgWeight)
-                    .print();
-
+            // avoid bombing the same thing twice
             boolean bombAlreadyHeadingToPlanet = gameState.getBombs().stream()
                     .anyMatch(b -> b.getTargetFactory() == target.getId());
 
             if(bombAlreadyHeadingToPlanet) {
-                prio = 0.0001;
+                prio = 0.001;
             }
 
+
             factoryPrio.setFactoryPrio(prio);
-            factoryPrios.add(factoryPrio);
+
+            prioList.add(factoryPrio);
         }
 
-        Collections.sort(factoryPrios);
 
-        return factoryPrios;
-    }
-
-
-    private double normalize(double valueMax, double value, boolean reverse) {
-        double norm = Math.max(value, 0.00001) / valueMax;
-        return reverse ? 1-norm : norm;
+        return prioList.sort();
     }
 }

@@ -8,9 +8,6 @@ public class Factory {
 	private Owner owner;
 	private int cyborgs;
 
-	private double factoryPrio;
-	private double bombPrio;
-
 	private int production;
 
 	private int turnsUntilProduction;
@@ -42,24 +39,6 @@ public class Factory {
 
 	public Factory setTurnsUntilProduction(int turnsUntilProduction) {
 		this.turnsUntilProduction = turnsUntilProduction;
-		return this;
-	}
-
-	public double getFactoryPrio() {
-		return factoryPrio;
-	}
-
-	public Factory setFactoryPrio(double factoryPrio) {
-		this.factoryPrio = factoryPrio;
-		return this;
-	}
-
-	public double getBombPrio() {
-		return bombPrio;
-	}
-
-	public Factory setBombPrio(double bombPrio) {
-		this.bombPrio = bombPrio;
 		return this;
 	}
 
@@ -105,8 +84,6 @@ public class Factory {
 				"id=" + id +
 				", owner=" + owner +
 				", cyborgs=" + cyborgs +
-				", factoryPrio=" + factoryPrio +
-				", bombPrio=" + bombPrio +
 				", production=" + production +
 				", turnsUntilProduction=" + turnsUntilProduction +
 				'}';

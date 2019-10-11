@@ -1,7 +1,9 @@
 package com.ghostcell.priomodel;
 
 import com.ghostcell.container.Factory;
+import com.ghostcell.io.IoUtil;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class FactoryPrio implements Comparable<FactoryPrio> {
@@ -10,13 +12,39 @@ public class FactoryPrio implements Comparable<FactoryPrio> {
     private Factory targetFactory;
 
     private double factoryPrio;
-    private List<Weight> weights;
+    private List<Weight> weights = null;
 
 
     public FactoryPrio(Factory originFactory, Factory targetFactory) {
         this.originFactory = originFactory;
         this.targetFactory = targetFactory;
     }
+
+    public FactoryPrio addWeight(Weight w) {
+        if(weights == null) {
+            weights = new ArrayList<>();
+        }
+
+        double outputWeight = w.calculateOutputWeight();
+        w.setOutputWeight(outputWeight);
+
+        weights.add(w);
+
+        return this;
+    }
+
+    public double calculatePreliminaryPrio() {
+
+        double totalWeight = 0;
+
+        for(Weight w : weights) {
+            totalWeight += w.getOutputWeight();
+        }
+
+        factoryPrio =  PrioUtil.normalize(weights.size(), totalWeight, false);
+        return factoryPrio;
+    }
+
 
     public Factory getOriginFactory() {
         return originFactory;
@@ -58,5 +86,36 @@ public class FactoryPrio implements Comparable<FactoryPrio> {
     @Override
     public int compareTo(FactoryPrio o) {
         return Double.compare(o.getFactoryPrio(), getFactoryPrio());
+    }
+
+
+    @Override
+    public String toString() {
+
+        String s = factoryIdToStr(originFactory.getId()) + " -> " + factoryIdToStr(targetFactory.getId()) + " | " + IoUtil.round(factoryPrio) + " | ";
+        for(int i = 0; i < weights.size(); i++) {
+            Weight w = weights.get(i);
+            boolean isLast = i == weights.size()-1;
+            s += w.getLabel() + ": " + w.toString();
+
+            if(!isLast) {
+                s += " | ";
+            }
+        }
+        return s;
+    }
+
+
+
+    private String factoryIdToStr(int id) {
+        if(id < 10) {
+            return id + " ";
+        } else {
+            return id + "";
+        }
+    }
+
+    public void print() {
+        System.err.println(this.toString());
     }
 }
