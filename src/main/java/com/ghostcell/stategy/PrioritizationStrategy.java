@@ -3,6 +3,7 @@ package com.ghostcell.stategy;
 import com.ghostcell.GameState;
 import com.ghostcell.Strategy;
 import com.ghostcell.container.*;
+import com.ghostcell.priomodel.FactoryPrio;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -10,13 +11,13 @@ import java.util.stream.Stream;
 
 public class PrioritizationStrategy extends Strategy {
 
-    private PrioritizationModel prioModel;
+    private CyborgPrioritizationModel prioModel;
 
     private BombPrioritizationModel bombPrioModel;
 
     public PrioritizationStrategy(GameState gameState) {
         super(gameState);
-        prioModel = new PrioritizationModel(gameState);
+        prioModel = new CyborgPrioritizationModel(gameState);
         bombPrioModel = new BombPrioritizationModel(gameState);
     }
 
