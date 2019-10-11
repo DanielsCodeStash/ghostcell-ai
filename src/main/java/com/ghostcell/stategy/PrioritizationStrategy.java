@@ -6,7 +6,9 @@ import com.ghostcell.container.*;
 import com.ghostcell.priomodel.FactoryPrio;
 import com.ghostcell.priomodel.PrioList;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -16,31 +18,78 @@ public class PrioritizationStrategy extends Strategy {
 
     private BombPrioritizationModel bombPrioModel;
 
+    private BoostPrioritizationModel boostModel;
+
+    private Set<Factory> frozenFactories;
+
     public PrioritizationStrategy(GameState gameState) {
         super(gameState);
         cyborgPrioModel = new CyborgPrioritizationModel(gameState);
         bombPrioModel = new BombPrioritizationModel(gameState);
+        boostModel = new BoostPrioritizationModel(gameState);
     }
 
     @Override
     public List<Order> run(GameState gameData) {
         initRound();
 
+        frozenFactories = new HashSet<>();
+
         for(Factory activeFactory : myFactories) {
+            PrioList initialCyborgPrio = cyborgPrioModel.getPrioList(activeFactory);
+            boostModel.registerTopCyborgPrioForFactory(initialCyborgPrio.getTopPrio());
+        }
+
+        for(Factory activeFactory : myFactories) {
+            PrioList boostPrio = boostModel.getPrioList();
+            boostPrio.print();
+            for(FactoryPrio prio : boostPrio.get()) {
+                evaluateBoostAction(prio);
+            }
 
             PrioList cyborgPrio = cyborgPrioModel.getPrioList(activeFactory);
+            cyborgPrioModel.setBoostPrioList(boostPrio);
+            cyborgPrio.print();
             for(FactoryPrio prio : cyborgPrio.get()) {
-                evaluateAction(prio);
+                if(frozenFactories.contains(prio.getOriginFactory())) {
+                    continue;
+                }
+                evaluateCyborgAction(prio);
             }
 
             PrioList bombPrio = bombPrioModel.getPrioList(activeFactory);
-            bombPrio.print();
             for(FactoryPrio prio : bombPrio.get()) {
                 evaluateBombAction(prio);
             }
+
+
         }
 
         return orders;
+    }
+
+    private void evaluateBoostAction(FactoryPrio prio) {
+
+        // TODO: make sure we are not being taken over before proceeding
+        // TODO: make request to other factories to send cyborgs for boost
+
+        if(prio.getFactoryPrio() < 0.5) {
+            return;
+        }
+
+
+        // clear send orders
+        if(prio.getOriginFactory().getNumCyborgs() < 10) {
+            frozenFactories.add(prio.getOriginFactory());
+            //System.err.println("holding units for boost at factory " + prio.getOriginFactory().getId() + "(currently + " + prio.getOriginFactory().getNumCyborgs() + " ) ");
+        }
+        else {
+            System.err.println("BOOOOOOOOOOST");
+            orders.add(
+            new Order()
+                    .setFrom(prio.getOriginFactory())
+                    .setBoost(true));
+        }
     }
 
 
@@ -64,13 +113,17 @@ public class PrioritizationStrategy extends Strategy {
         }
     }
 
-    private void evaluateAction(FactoryPrio prio) {
+    private void evaluateCyborgAction(FactoryPrio prio) {
 
         Factory originFactory = prio.getOriginFactory();
         Factory targetFactory = prio.getTargetFactory();
 
         if(originFactory.getId() == targetFactory.getId())
             return;
+
+        if(orders.stream().anyMatch(o -> o.isBoost() && o.getFrom().getId() == prio.getOriginFactory().getId())) {
+            return;
+        }
 
         int availableCyborgs = originFactory.getNumCyborgs() + getSumOfArrivingTroops(originFactory);
         if(availableCyborgs <= 1)

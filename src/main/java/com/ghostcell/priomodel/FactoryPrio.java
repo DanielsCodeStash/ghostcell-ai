@@ -14,6 +14,9 @@ public class FactoryPrio implements Comparable<FactoryPrio> {
     private double factoryPrio;
     private List<Weight> weights = null;
 
+    public FactoryPrio(Factory originFactory) {
+        this.originFactory = originFactory;
+    }
 
     public FactoryPrio(Factory originFactory, Factory targetFactory) {
         this.originFactory = originFactory;
@@ -92,7 +95,14 @@ public class FactoryPrio implements Comparable<FactoryPrio> {
     @Override
     public String toString() {
 
-        String s = factoryIdToStr(originFactory.getId()) + " -> " + factoryIdToStr(targetFactory.getId()) + " | " + IoUtil.round(factoryPrio) + " | ";
+        String s = "";
+        if(targetFactory == null) {
+            s = factoryIdToStr(originFactory.getId()) + " | " + IoUtil.round(factoryPrio) + " | ";
+        } else {
+
+            s = factoryIdToStr(originFactory.getId()) + " -> " + factoryIdToStr(targetFactory.getId()) + " | " + IoUtil.round(factoryPrio) + " | ";
+        }
+
         for(int i = 0; i < weights.size(); i++) {
             Weight w = weights.get(i);
             boolean isLast = i == weights.size()-1;

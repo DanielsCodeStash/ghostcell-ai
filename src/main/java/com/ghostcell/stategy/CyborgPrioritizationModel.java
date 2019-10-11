@@ -6,12 +6,20 @@ import com.ghostcell.priomodel.FactoryPrio;
 import com.ghostcell.priomodel.PrioList;
 import com.ghostcell.priomodel.Weight;
 
+import java.util.Optional;
+
 public class CyborgPrioritizationModel {
 
     private GameState gameState;
 
+    private PrioList boostPrioList;
+
     public CyborgPrioritizationModel(GameState gameState) {
         this.gameState = gameState;
+    }
+
+    public void setBoostPrioList(PrioList boostPrioList) {
+        this.boostPrioList = boostPrioList;
     }
 
     public PrioList getPrioList(Factory originFactory) {
@@ -28,6 +36,7 @@ public class CyborgPrioritizationModel {
 
             double distanceImportance = 0.9;
             double productionImportance = 0.2;
+            double boostPrioImportance = 0.5;
 
             factoryPrio.addWeight(new Weight()
                     .setLabel("dist")
@@ -43,6 +52,23 @@ public class CyborgPrioritizationModel {
                     .setReverse(false)
                     .setImportance(productionImportance));
 
+            double boostValue = 0;
+            if(target.ownerIsMe()) {
+                Optional<FactoryPrio> boostPrio = boostPrioList.get().stream()
+                        .filter(p -> p.getOriginFactory().getId() == target.getId())
+                        .findFirst();
+
+                if(boostPrio.isPresent()) {
+                    boostValue = boostPrio.get().getFactoryPrio();
+                }
+            }
+
+            factoryPrio.addWeight(new Weight() // target production
+                    .setLabel("boost")
+                    .setMaxValue(1)
+                    .setValue(boostValue)
+                    .setReverse(false)
+                    .setImportance(boostPrioImportance));
 
             double prio = factoryPrio.calculatePreliminaryPrio();
 
@@ -61,4 +87,5 @@ public class CyborgPrioritizationModel {
         double norm = Math.max(value, 0.00001) / valueMax;
         return reverse ? 1-norm : norm;
     }
+
 }

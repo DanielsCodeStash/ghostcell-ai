@@ -1,5 +1,7 @@
 package com.ghostcell.priomodel;
 
+import com.ghostcell.container.Factory;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -20,6 +22,10 @@ public class PrioList {
             }
         }
         System.err.println(s);
+    }
+
+    public FactoryPrio getTopPrio() {
+        return prioLists.get(0);
     }
 
     public PrioList sort() {

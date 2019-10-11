@@ -6,10 +6,6 @@ import com.ghostcell.priomodel.FactoryPrio;
 import com.ghostcell.priomodel.PrioList;
 import com.ghostcell.priomodel.Weight;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-
 public class BombPrioritizationModel {
 
     private GameState gameState;
@@ -49,8 +45,6 @@ public class BombPrioritizationModel {
                     .setValue(target.getProduction())
                     .setReverse(false)
                     .setImportance(targetProductionImportance));
-
-
 
             factoryPrio.addWeight(new Weight() // target cyborgs
                     .setLabel("t_cybo")

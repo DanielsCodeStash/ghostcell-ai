@@ -5,6 +5,7 @@ public class Order {
 	private Factory to;
 	private int num;
 	private boolean bomb = false;
+	private boolean boost = false;
 
 	public Order() {
 	}
@@ -13,6 +14,15 @@ public class Order {
 		this.from = from;
 		this.to = to;
 		this.num = num;
+	}
+
+	public boolean isBoost() {
+		return boost;
+	}
+
+	public Order setBoost(boolean boost) {
+		this.boost = boost;
+		return this;
 	}
 
 	public boolean isBomb() {
