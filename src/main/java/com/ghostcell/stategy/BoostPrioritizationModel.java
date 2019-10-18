@@ -17,37 +17,51 @@ public class BoostPrioritizationModel {
 
     private Map<Integer, FactoryCyborgPrioHistory> factoryIdToHistory = new HashMap<>();
 
+    private double meanDistanceToEnemyFactory;
+    private double minDistanceToEnemyFactory;
+    private double maxDistanceToEnemyFactory;
+
+    private double meanDistanceToEnemyTroop;
+
     public BoostPrioritizationModel(GameState gameState) {
         this.gameState = gameState;
     }
 
-    public void registerTopCyborgPrioForFactory(FactoryPrio prio) {
-        if(!prio.getOriginFactory().ownerIsMe()) {
-            return;
+    private void calculateMeanDistances() {
+        List<Factory> enemyFactories = gameState.getFactoryListByOwner(Owner.ENEMY);
+        List<Factory> ownFactories = gameState.getFactoryListByOwner(Owner.YOU);
+
+        double totalDistance = 0;
+        minDistanceToEnemyFactory = Double.MAX_VALUE;
+        maxDistanceToEnemyFactory = 0;
+
+        for(Factory ownFactory : ownFactories) {
+            double ownFactoryDistance = 0;
+
+            for(Factory enemyFactory : enemyFactories) {
+                double dist = ownFactory.distanceTo(enemyFactory);
+                totalDistance += dist;
+                ownFactoryDistance += dist;
+
+            }
+
+            minDistanceToEnemyFactory = Math.min(minDistanceToEnemyFactory, ownFactoryDistance);
+            maxDistanceToEnemyFactory = Math.max(maxDistanceToEnemyFactory, ownFactoryDistance);
         }
 
-        FactoryCyborgPrioHistory history = factoryIdToHistory.get(prio.getOriginFactory().getId());
-        if(history == null) {
+        meanDistanceToEnemyFactory = totalDistance / ownFactories.size();
+    }
 
-            history = new FactoryCyborgPrioHistory(1, prio.getFactoryPrio());
-            factoryIdToHistory.put(prio.getOriginFactory().getId(), history);
-
-        }
-        else {
-
-            double oldMean = history.getMeanProduction();
-            double newValue = prio.getFactoryPrio();
-            double numValues = history.getNumRounds();
-
-            history
-                    .setLatestMeanProductionValue(oldMean)
-                    .setLatestPrioValue(newValue)
-                    .setMeanProduction(oldMean + (newValue-oldMean) / numValues)
-                    .setNumRounds(history.getNumRounds()+1);
-        }
+    private double getTotalDistanceToEnemyFactory(Factory activeFactory) {
+        return gameState.getFactoryListByOwner(Owner.ENEMY)
+                .stream()
+                .mapToDouble(f -> f.distanceTo(activeFactory))
+                .sum();
     }
 
     public PrioList getPrioList() {
+
+        calculateMeanDistances();
 
         PrioList prioList = new PrioList();
 
@@ -56,37 +70,27 @@ public class BoostPrioritizationModel {
 
             FactoryPrio factoryPrio = new FactoryPrio(activeFactory);
 
-            FactoryCyborgPrioHistory history = factoryIdToHistory.get(activeFactory.getId());
-            if(history == null) {
+            if(activeFactory.getProduction() == 3) {
                 continue;
             }
 
-            if(history.getNumRounds() < 5 || activeFactory.getProduction() == 3) {
-                continue;
-            }
 
-            double percentBelowMean;
-
-            double mean = history.getLatestMeanProductionValue();
-            double latestPrio = history.getLatestPrioValue();
-
-            if(latestPrio > mean) {
-                percentBelowMean = 0;
-            } else {
-                percentBelowMean = mean / latestPrio;
-                if(percentBelowMean > 100) {
-                    percentBelowMean = 100;
-                }
-            }
-
-            double belowMeanImportance = 1.0;
+            double factoryDistanceImportance = 0.5;
+            double turnBonusImportance = 0.8;
 
             factoryPrio.addWeight(new Weight()
-                    .setLabel("below_mean")
-                    .setMaxValue(100)
-                    .setValue(percentBelowMean)
-                    .setReverse(true)
-                    .setImportance(belowMeanImportance));
+                    .setLabel("e_dist_mean")
+                    .setMaxValue(50)
+                    .setValue(getTotalDistanceToEnemyFactory(activeFactory))
+                    .setReverse(false)
+                    .setImportance(factoryDistanceImportance));
+
+            factoryPrio.addWeight(new Weight()
+                    .setLabel("turn_bonus")
+                    .setMaxValue(50)
+                    .setValue(gameState.getTurnNumber())
+                    .setReverse(false)
+                    .setImportance(turnBonusImportance));
             
 
             factoryPrio.setFactoryPrio(factoryPrio.calculatePreliminaryPrio());
@@ -96,6 +100,7 @@ public class BoostPrioritizationModel {
 
         return prioList;
     }
+
 
 
 }

@@ -35,21 +35,18 @@ public class PrioritizationStrategy extends Strategy {
 
         frozenFactories = new HashSet<>();
 
-        for(Factory activeFactory : myFactories) {
-            PrioList initialCyborgPrio = cyborgPrioModel.getPrioList(activeFactory);
-            boostModel.registerTopCyborgPrioForFactory(initialCyborgPrio.getTopPrio());
-        }
+        PrioList boostPrio = boostModel.getPrioList();
+        boostPrio.print();
 
         for(Factory activeFactory : myFactories) {
-            PrioList boostPrio = boostModel.getPrioList();
-            boostPrio.print();
+
             for(FactoryPrio prio : boostPrio.get()) {
                 evaluateBoostAction(prio);
             }
 
             PrioList cyborgPrio = cyborgPrioModel.getPrioList(activeFactory);
             cyborgPrioModel.setBoostPrioList(boostPrio);
-            cyborgPrio.print();
+            //cyborgPrio.print();
             for(FactoryPrio prio : cyborgPrio.get()) {
                 if(frozenFactories.contains(prio.getOriginFactory())) {
                     continue;
@@ -70,13 +67,13 @@ public class PrioritizationStrategy extends Strategy {
 
     private void evaluateBoostAction(FactoryPrio prio) {
 
-        // TODO: make sure we are not being taken over before proceeding
-        // TODO: make request to other factories to send cyborgs for boost
-
         if(prio.getFactoryPrio() < 0.5) {
             return;
         }
 
+        if(prio.getOriginFactory().getNumCyborgs() + getSumOfArrivingTroops(prio.getOriginFactory()) < 1) {
+            return;
+        }
 
         // clear send orders
         if(prio.getOriginFactory().getNumCyborgs() < 10) {

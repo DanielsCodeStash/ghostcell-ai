@@ -7,7 +7,11 @@ public class IoUtil {
     private static DecimalFormat df = new DecimalFormat("#.###");
 
     public static String round(double value) {
-        if(value < 0.00001) {
+        if(value > 0.99999) {
+            return "1.000";
+        }
+
+        if(value < 0.0001) {
             return "0.000";
         }
 
