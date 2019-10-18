@@ -53,4 +53,15 @@ public class Bomb {
         this.turnsBeforeExplosion = turnsBeforeExplosion;
         return this;
     }
+
+    @Override
+    public String toString() {
+        return "Bomb{" +
+                "id=" + id +
+                ", owner=" + owner +
+                ", leavingFactory=" + leavingFactory +
+                ", targetFactory=" + targetFactory +
+                ", turnsBeforeExplosion=" + turnsBeforeExplosion +
+                '}';
+    }
 }

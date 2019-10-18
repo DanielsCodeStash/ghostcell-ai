@@ -9,6 +9,10 @@ public class GameState {
 
     private int turnNumber;
 
+    //private List<BombLaunchInstance> bombsFollowedUpOn = new ArrayList<>();
+
+    private List<Integer> bombsFollowedUpOn = new ArrayList<>();
+
     private List<Link> links = new ArrayList<>();
     private List<Troop> troops;
     private List<Factory> factories = new ArrayList<>();
@@ -33,6 +37,8 @@ public class GameState {
         numBombsRemaining--;
     }
 
+
+
     public static GameState init() {
         instance = new GameState();
         instance.setTurnNumber(0);
@@ -52,6 +58,10 @@ public class GameState {
             }
         }
         return outFactories;
+    }
+
+    public List<Integer> getBombsFollowedUpOn() {
+        return bombsFollowedUpOn;
     }
 
     public void turnDone() {

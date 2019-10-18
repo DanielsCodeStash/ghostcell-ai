@@ -6,6 +6,7 @@ import com.ghostcell.container.*;
 import com.ghostcell.priomodel.FactoryPrio;
 import com.ghostcell.priomodel.PrioList;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -36,33 +37,54 @@ public class PrioritizationStrategy extends Strategy {
         frozenFactories = new HashSet<>();
 
         PrioList boostPrio = boostModel.getPrioList();
-        boostPrio.print();
 
         for(Factory activeFactory : myFactories) {
+
+            evaluateBombFollowup();
 
             for(FactoryPrio prio : boostPrio.get()) {
                 evaluateBoostAction(prio);
             }
 
+            PrioList bombPrio = bombPrioModel.getPrioList(activeFactory);
+            bombPrio.print();
+            for(FactoryPrio prio : bombPrio.get()) {
+                evaluateBombAction(prio);
+            }
+
             PrioList cyborgPrio = cyborgPrioModel.getPrioList(activeFactory);
             cyborgPrioModel.setBoostPrioList(boostPrio);
-            //cyborgPrio.print();
             for(FactoryPrio prio : cyborgPrio.get()) {
                 if(frozenFactories.contains(prio.getOriginFactory())) {
                     continue;
                 }
                 evaluateCyborgAction(prio);
             }
-
-            PrioList bombPrio = bombPrioModel.getPrioList(activeFactory);
-            for(FactoryPrio prio : bombPrio.get()) {
-                evaluateBombAction(prio);
-            }
-
-
         }
-
+        for(Bomb b : gameState.getBombs()) {
+            System.err.println(b);
+        }
         return orders;
+    }
+
+    private void evaluateBombFollowup() {
+        List<Bomb> ownBombsInTheAir = gameState.getBombs()
+                .stream()
+                .filter(b -> b.getOwner() == Owner.YOU)
+                .collect(Collectors.toList());
+
+        for(Bomb b : ownBombsInTheAir) {
+            if (!gameState.getBombsFollowedUpOn().contains(b.getId())) {
+                Factory f = gameState.getFactoryById(b.getLeavingFactory());
+                if(f.ownerIsMe() && f.getNumCyborgs() >= 1) {
+                    sendOrder(new Order()
+                            .setFrom(f)
+                            .setTo(gameState.getFactoryById(b.getTargetFactory()))
+                            .setNum(1));
+                }
+                gameState.getBombsFollowedUpOn().add(b.getId());
+            }
+        }
     }
 
     private void evaluateBoostAction(FactoryPrio prio) {
@@ -75,10 +97,8 @@ public class PrioritizationStrategy extends Strategy {
             return;
         }
 
-        // clear send orders
         if(prio.getOriginFactory().getNumCyborgs() < 10) {
             frozenFactories.add(prio.getOriginFactory());
-            //System.err.println("holding units for boost at factory " + prio.getOriginFactory().getId() + "(currently + " + prio.getOriginFactory().getNumCyborgs() + " ) ");
         }
         else {
             System.err.println("BOOOOOOOOOOST");
@@ -97,14 +117,32 @@ public class PrioritizationStrategy extends Strategy {
         if(gameState.getNumBombsRemaining() == 0)
             return;
 
+
         if(originFactory.ownerIsMe() && targetFactory.ownerIsEnemy()) {
             if(prio.getFactoryPrio() > 0.35) {
-                Order bomb = new Order()
+
+                // avoid bombing the same thing twice
+                boolean bombAlreadyHeadingToPlanet = gameState.getBombs().stream().anyMatch(b -> b.getTargetFactory() == targetFactory.getId());
+                if(bombAlreadyHeadingToPlanet) {
+                    return;
+                }
+
+                Order bombOrder = new Order()
                         .setFrom(originFactory)
                         .setTo(targetFactory)
                         .setBomb(true);
 
-                orders.add(bomb);
+                orders.add(bombOrder);
+
+                Bomb bomb = new Bomb()
+                        .setLeavingFactory(originFactory.getId())
+                        .setTargetFactory(targetFactory.getId())
+                        .setOwner(Owner.YOU)
+                        .setTurnsBeforeExplosion(originFactory.distanceTo(targetFactory) + 1)
+                        .setId(-1);
+
+                gameState.getBombs().add(bomb);
+
                 gameState.removeOneAvailableBomb();
             }
         }

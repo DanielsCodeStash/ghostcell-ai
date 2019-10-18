@@ -10,8 +10,6 @@ public class BombPrioritizationModel {
 
     private GameState gameState;
 
-    private static final boolean debug = true;
-
     public BombPrioritizationModel(GameState gameState) {
         this.gameState = gameState;
     }
@@ -58,15 +56,6 @@ public class BombPrioritizationModel {
 
             // round number bonus
             prio = Math.min(1, prio + gameState.getTurnNumber() * 0.01);
-
-            // avoid bombing the same thing twice
-            boolean bombAlreadyHeadingToPlanet = gameState.getBombs().stream()
-                    .anyMatch(b -> b.getTargetFactory() == target.getId());
-
-            if(bombAlreadyHeadingToPlanet) {
-                prio = 0.001;
-            }
-
 
             factoryPrio.setFactoryPrio(prio);
 

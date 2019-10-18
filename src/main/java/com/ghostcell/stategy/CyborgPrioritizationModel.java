@@ -36,7 +36,7 @@ public class CyborgPrioritizationModel {
 
             double distanceImportance = 0.9;
             double productionImportance = 0.2;
-            double boostPrioImportance = 0.5;
+            double boostPrioImportance = 0.8;
 
             factoryPrio.addWeight(new Weight()
                     .setLabel("dist")
@@ -83,9 +83,5 @@ public class CyborgPrioritizationModel {
         return prioList.sort();
     }
 
-    private double normalize(double valueMax, double value, boolean reverse) {
-        double norm = Math.max(value, 0.00001) / valueMax;
-        return reverse ? 1-norm : norm;
-    }
 
 }

@@ -74,21 +74,28 @@ public class BoostPrioritizationModel {
                 continue;
             }
 
-
-            double factoryDistanceImportance = 0.5;
-            double turnBonusImportance = 0.8;
+            double factoryTotalDistanceImportance = 0.4;
+            double factoryMeanDistanceImportance = 0.4;
+            double turnBonusImportance = 0.5;
 
             factoryPrio.addWeight(new Weight()
-                    .setLabel("e_dist_mean")
+                    .setLabel("total_e_dist")
                     .setMaxValue(50)
                     .setValue(getTotalDistanceToEnemyFactory(activeFactory))
                     .setReverse(false)
-                    .setImportance(factoryDistanceImportance));
+                    .setImportance(factoryTotalDistanceImportance));
+
+            factoryPrio.addWeight(new Weight()
+                    .setLabel("mean_dist")
+                    .setMaxValue(5)
+                    .setValue(getTotalDistanceToEnemyFactory(activeFactory) / gameState.getFactoryListByOwner(Owner.ENEMY).size())
+                    .setReverse(false)
+                    .setImportance(factoryMeanDistanceImportance));
 
             factoryPrio.addWeight(new Weight()
                     .setLabel("turn_bonus")
                     .setMaxValue(50)
-                    .setValue(gameState.getTurnNumber())
+                    .setValue(gameState.getTurnNumber() * 2)
                     .setReverse(false)
                     .setImportance(turnBonusImportance));
             
