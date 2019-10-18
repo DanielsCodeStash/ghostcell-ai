@@ -33,7 +33,6 @@ public class CyborgPrioritizationModel {
             if(target.getId() == originFactory.getId())
                 continue;
 
-
             double distanceImportance = 0.9;
             double productionImportance = 0.2;
             double boostPrioImportance = 0.8;
@@ -52,21 +51,10 @@ public class CyborgPrioritizationModel {
                     .setReverse(false)
                     .setImportance(productionImportance));
 
-            double boostValue = 0;
-            if(target.ownerIsMe()) {
-                Optional<FactoryPrio> boostPrio = boostPrioList.get().stream()
-                        .filter(p -> p.getOriginFactory().getId() == target.getId())
-                        .findFirst();
-
-                if(boostPrio.isPresent()) {
-                    boostValue = boostPrio.get().getFactoryPrio();
-                }
-            }
-
             factoryPrio.addWeight(new Weight() // target production
                     .setLabel("boost")
                     .setMaxValue(1)
-                    .setValue(boostValue)
+                    .setValue(calculateBoostValue(target))
                     .setReverse(false)
                     .setImportance(boostPrioImportance));
 
@@ -83,5 +71,17 @@ public class CyborgPrioritizationModel {
         return prioList.sort();
     }
 
+    private double calculateBoostValue(Factory target) {
+        double boostValue = 0;
+        if(target.ownerIsMe()) {
+            Optional<FactoryPrio> boostPrio = boostPrioList.get().stream()
+                    .filter(p -> p.getOriginFactory().getId() == target.getId())
+                    .findFirst();
 
+            if(boostPrio.isPresent()) {
+                boostValue = boostPrio.get().getFactoryPrio();
+            }
+        }
+        return boostValue;
+    }
 }
