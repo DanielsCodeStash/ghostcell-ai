@@ -35,7 +35,7 @@ public class CyborgPrioritizationModel {
 
             double distanceImportance = 0.9;
             double productionImportance = 0.2;
-            double boostPrioImportance = 0.8;
+            double boostPrioImportance = 0.5;
 
             factoryPrio.addWeight(new Weight()
                     .setLabel("dist")

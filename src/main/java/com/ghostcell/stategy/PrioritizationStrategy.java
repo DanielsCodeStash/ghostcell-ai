@@ -47,13 +47,14 @@ public class PrioritizationStrategy extends Strategy {
             }
 
             PrioList bombPrio = bombPrioModel.getPrioList(activeFactory);
-            bombPrio.print();
+            //bombPrio.print();
             for(FactoryPrio prio : bombPrio.get()) {
                 evaluateBombAction(prio);
             }
 
             PrioList cyborgPrio = cyborgPrioModel.getPrioList(activeFactory);
             cyborgPrioModel.setBoostPrioList(boostPrio);
+            cyborgPrio.print();
             for(FactoryPrio prio : cyborgPrio.get()) {
                 if(frozenFactories.contains(prio.getOriginFactory())) {
                     continue;
